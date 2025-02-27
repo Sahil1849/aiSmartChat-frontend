@@ -3,15 +3,17 @@ import { FiUsers } from "react-icons/fi";
 import { FaRegUser } from "react-icons/fa";
 import { IoIosSend } from "react-icons/io";
 import { IoMdPersonAdd } from "react-icons/io";
+import { RiCloseLine } from "react-icons/ri";
 import axios from "../config/axios.config";
 import { useLocation } from "react-router-dom";
 import { UserContext } from "../context/user.context";
-import { RiCloseLine } from "react-icons/ri";
+import { useNavigate } from "react-router-dom";
 import {
   initializeSocket,
   receiveMessage,
   sendMessage,
 } from "../config/socket.config";
+import MarkDown from "markdown-to-jsx";
 
 const Project = () => {
   const [showSidePanel, setShowSidePanel] = useState(false);
@@ -21,11 +23,13 @@ const Project = () => {
   const [users, setUsers] = useState([]);
   const [projects, setProjects] = useState({});
   const [messages, setMessages] = useState([]);
+  const [aiResponses, setAiResponses] = useState([]);
   const [loading, setLoading] = useState(false);
   const { user } = useContext(UserContext);
   const messagesEndRef = useRef(null);
   const projectId = useRef(null);
   const location = useLocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
     projectId.current = location.state?.project?._id;
@@ -34,12 +38,14 @@ const Project = () => {
     initializeSocket(projectId.current);
 
     receiveMessage("project-message", (data) => {
-      console.log("data: ", data);
-      setMessages((prevMessages) => [...prevMessages, data]);
+      if (data.sender === "AI") {
+        setAiResponses((prev) => [...prev, data]);
+      } else {
+        setMessages((prevMessages) => [...prevMessages, data]);
+      }
     });
 
     return () => {
-      // Cleanup socket listeners when component unmounts
       receiveMessage("project-message", null);
     };
   }, [location.state?.project?._id]);
@@ -69,7 +75,7 @@ const Project = () => {
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  }, [messages, aiResponses]);
 
   const handleUserSelection = (userId) => {
     setSelectedUserId((prev) =>
@@ -99,16 +105,29 @@ const Project = () => {
       message: inputValue,
       sender: user,
     };
+
     sendMessage("project-message", newMessage);
     setMessages((prev) => [...prev, newMessage]);
     setInputValue("");
+
+    if (inputValue.startsWith("@ai")) {
+      setTimeout(() => {
+        const aiResponse = {
+          message: "This is an AI-generated response!",
+          sender: "AI",
+        };
+        sendMessage("project-message", aiResponse);
+      }, 1000);
+    }
+  };
+
+  const handleBackButton = () => {
+    navigate("/home");
   };
 
   return (
     <main className="h-screen w-screen flex">
-      {/* Left Sidebar */}
       <section className="relative w-[30%] bg-gray-200 flex flex-col">
-        {/* Header */}
         <header className="p-2 px-4 flex justify-between items-center bg-purple-700">
           <button
             onClick={() => setShowModal(true)}
@@ -125,7 +144,6 @@ const Project = () => {
           </button>
         </header>
 
-        {/* Conversation Area */}
         <div className="flex-1 overflow-y-auto p-4">
           {loading ? (
             <p className="text-center text-gray-500">Loading messages...</p>
@@ -134,7 +152,9 @@ const Project = () => {
               <div
                 key={idx}
                 className={`flex ${
-                  msg.sender?._id === user?._id ? "justify-end" : "justify-start"
+                  msg.sender?._id === user?._id
+                    ? "justify-end"
+                    : "justify-start"
                 } mb-4`}
               >
                 <div
@@ -153,7 +173,6 @@ const Project = () => {
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Input Section */}
         <div className="p-4 flex items-center gap-2 bg-gray-100">
           <input
             type="text"
@@ -209,12 +228,27 @@ const Project = () => {
         </div>
       </section>
 
-      {/* Right Content Area */}
-      <section className="w-full md:w-[70%] bg-white flex flex-col justify-center items-center p-8">
-        <h1 className="text-2xl font-bold mb-4">Project Details</h1>
-        <p className="text-gray-600">
-          {projects.description || "No details available for this project."}
-        </p>
+      <section className="w-full md:w-[70%] bg-white flex flex-col gap-4">
+        <div className="flex justify-between bg-zinc-800 p-4 items-center">
+          <button
+            onClick={handleBackButton}
+            className="px-4 py-2 bg-purple-600 hover:bg-purple-800 rounded-lg text-white"
+          >
+            Back
+          </button>
+          <h1 className="text-2xl font-bold text-white">AI Responses</h1>
+          <button className="px-4 py-2 bg-red-500 hover:bg-red-700 rounded-lg text-white">
+            Exit Project
+          </button>
+        </div>
+        <div className="flex-1 overflow-y-auto px-4">
+          {aiResponses.map((res, idx) => (
+            <div key={idx} className="p-3 bg-yellow-100 rounded-xl mb-2">
+              <small className="block mb-1">~ AI</small>
+              <MarkDown>{res.message}</MarkDown>
+            </div>
+          ))}
+        </div>
       </section>
 
       {/* Users Modal */}
