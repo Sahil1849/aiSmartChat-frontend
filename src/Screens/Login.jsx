@@ -1,28 +1,22 @@
-import React, { useContext, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import axios from "../config/axios.config";
-import { UserContext } from "../context/user.context";
+// src/screens/Login.jsx
+import React, { useState } from "react";
+import { Link } from "react-router-dom";
+import { useLogin } from "../hooks/auth/useLogin";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const navigate = useNavigate();
-  const { setUser } = useContext(UserContext);
+  const { mutate: login, isLoading, isError } = useLogin();
 
-  const submitHandler = async (e) => {
+  const submitHandler = (e) => {
     e.preventDefault();
-    try {
-      await axios.post("/user/login", { email, password }).then((response) => {
-        console.log(response.data);
-        localStorage.setItem("token", response.data.token);
-        setUser(response.data.user);
-        console.log(response.data.user);
-        navigate("/home");
-      });
-    } catch (error) {
-      console.log(error);
-    }
+    const loginData = {
+      email,
+      password,
+    };
+    login(loginData);
   };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-900">
       <div className="bg-gray-800 p-8 rounded-lg shadow-lg w-full max-w-md">
@@ -55,10 +49,14 @@ const Login = () => {
           <button
             type="submit"
             className="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600 transition duration-200"
+            disabled={isLoading}
           >
-            Login
+            {isLoading ? "Logging in..." : "Login"}
           </button>
         </form>
+        {isError && (
+          <p className="text-red-500 mt-4">Login failed. Please try again.</p>
+        )}
         <p className="text-gray-400 mt-4">
           Don't have an account?{" "}
           <Link to="/register" className="text-blue-500 hover:underline">

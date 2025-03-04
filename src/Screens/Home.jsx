@@ -1,50 +1,50 @@
-import React, { useEffect, useState } from "react";
-import axios from "../config/axios.config";
+// components/Home.js
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useFetchProjects } from "../hooks/projects/useFetchProjects";
+import { useCreateProject } from "../hooks/projects/useCreateProject";
+import { useLogout } from "../hooks/auth/useLogout";
 
 const Home = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [projectName, setProjectName] = useState("");
-  const [projects, setProjects] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-
   const navigate = useNavigate();
+
+  // Use the fetch projects hook
+  const {
+    data: projects,
+    isLoading: isFetching,
+    error: fetchError,
+  } = useFetchProjects();
+
+  // Use the create project hook
+  const {
+    mutate: createProject,
+    isLoading: isCreating,
+    error: createError,
+  } = useCreateProject();
+
+  const {
+    mutate: logoutUser,
+    isLoading: isLoggingOut,
+    error: logoutError,
+  } = useLogout();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
-    setError(null);
-
     try {
-      await axios.post("/project/create", { name: projectName });
+      console.log("Creating project:", projectName);
+      await createProject(projectName);
       setIsModalOpen(false);
       setProjectName("");
-      fetchProjects(); 
     } catch (err) {
-      setError(err.response?.data?.message || "An error occurred");
-    } finally {
-      setLoading(false);
+      console.error("Error creating project:", err);
     }
   };
 
-  const fetchProjects = async () => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      const res = await axios.get("/project/all");
-      setProjects(res.data.projects);
-    } catch (err) {
-      setError(err.response?.data?.message || "An error occurred");
-    } finally {
-      setLoading(false);
-    }
+  const handleLogout = () => {
+    logoutUser();
   };
-
-  useEffect(() => {
-    fetchProjects();
-  }, []);
 
   return (
     <main>
@@ -56,11 +56,18 @@ const Home = () => {
           Create Project
         </button>
 
-        {loading && <p>Loading...</p>}
-        {error && <p className="text-red-500">{error}</p>}
+        <button
+          className="p-2 bg-red-500 text-white rounded-md mb-4"
+          onClick={handleLogout}
+        >
+          {isLoggingOut ? "Logging out..." : "Logout"}
+        </button>
+
+        {isFetching && <p>Loading projects...</p>}
+        {fetchError && <p className="text-red-500">{fetchError.message}</p>}
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {projects.map((project) => (
+          {projects?.map((project) => (
             <div
               key={project._id}
               onClick={() => navigate("/project", { state: { project } })}
@@ -98,19 +105,22 @@ const Home = () => {
                   type="button"
                   className="mr-2 p-2 bg-gray-200 rounded-md"
                   onClick={() => setIsModalOpen(false)}
-                  disabled={loading}
+                  disabled={isCreating}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   className="p-2 bg-blue-500 text-white rounded-md"
-                  disabled={loading}
+                  disabled={isCreating}
                 >
-                  {loading ? "Creating..." : "Create"}
+                  {isCreating ? "Creating..." : "Create"}
                 </button>
               </div>
             </form>
+            {createError && (
+              <p className="text-red-500 mt-2">{createError.message}</p>
+            )}
           </div>
         </div>
       )}

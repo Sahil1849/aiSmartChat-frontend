@@ -4,79 +4,77 @@ import { FaRegUser } from "react-icons/fa";
 import { IoIosSend } from "react-icons/io";
 import { IoMdPersonAdd } from "react-icons/io";
 import { RiCloseLine } from "react-icons/ri";
-import axios from "../config/axios.config";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { UserContext } from "../context/user.context";
-import { useNavigate } from "react-router-dom";
 import {
   initializeSocket,
   receiveMessage,
   sendMessage,
 } from "../config/socket.config";
 import MarkDown from "markdown-to-jsx";
+import { useFetchProjectById } from "../hooks/projects/useFetchProjectById";
+import { useFetchAllUsers } from "../hooks/users/useFetchAllUsers";
+import { useAddCollaborators } from "../hooks/users/useAddCollaborators";
 
 const Project = () => {
   const [showSidePanel, setShowSidePanel] = useState(false);
   const [inputValue, setInputValue] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState([]);
-  const [users, setUsers] = useState([]);
-  const [projects, setProjects] = useState({});
   const [messages, setMessages] = useState([]);
   const [aiResponses, setAiResponses] = useState([]);
-  const [loading, setLoading] = useState(false);
   const { user } = useContext(UserContext);
   const messagesEndRef = useRef(null);
   const projectId = useRef(null);
   const location = useLocation();
   const navigate = useNavigate();
 
+  // Fetch project and users
+  const {
+    data: project,
+    isLoading: isProjectLoading,
+    error: projectError,
+  } = useFetchProjectById(location.state?.project?._id);
+
+  const {
+    data: users,
+    isLoading: isUsersLoading,
+    error: usersError,
+  } = useFetchAllUsers();
+
+  // Add collaborators mutation
+  const { mutate: addCollaborators, isLoading: isAddingCollaborators } =
+    useAddCollaborators(location.state?.project?._id);
+
+  // Initialize socket and handle messages
   useEffect(() => {
     projectId.current = location.state?.project?._id;
     if (!projectId.current) return;
 
-    initializeSocket(projectId.current);
+    const socket = initializeSocket(projectId.current);
 
-    receiveMessage("project-message", (data) => {
+    const handleIncomingMessage = (data) => {
       if (data.sender === "AI") {
         setAiResponses((prev) => [...prev, data]);
       } else {
-        setMessages((prevMessages) => [...prevMessages, data]);
+        setMessages((prev) => [...prev, data]);
       }
-    });
+    };
+
+    socket.on("project-message", handleIncomingMessage);
 
     return () => {
-      receiveMessage("project-message", null);
+      socket.off("project-message", handleIncomingMessage);
+      socket.disconnect();
     };
   }, [location.state?.project?._id]);
 
-  useEffect(() => {
-    if (!projectId.current) return;
-    setLoading(true);
-
-    const fetchData = async () => {
-      try {
-        const [{ data: projectData }, { data: userData }] = await Promise.all([
-          axios.get(`/project/${projectId.current}`),
-          axios.get("/user/all"),
-        ]);
-
-        setProjects(projectData?.project);
-        setUsers(userData?.users);
-      } catch (error) {
-        console.error("Error while fetching data", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, [location.state?.project?._id]);
-
+  // Scroll to the bottom of the messages
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, aiResponses]);
 
+  // Handle user selection for collaborators
   const handleUserSelection = (userId) => {
     setSelectedUserId((prev) =>
       prev.includes(userId)
@@ -85,18 +83,18 @@ const Project = () => {
     );
   };
 
-  const addCollaborators = async () => {
+  // Handle adding collaborators
+  const handleAddCollaborators = async () => {
     try {
-      await axios.put("/project/add-user", {
-        projectId: projectId.current,
-        users: selectedUserId,
-      });
+      await addCollaborators(selectedUserId);
       setShowModal(false);
+      setSelectedUserId([]);
     } catch (err) {
-      console.error(err);
+      console.error("Error adding collaborators:", err);
     }
   };
 
+  // Send a message
   const send = (e) => {
     e.preventDefault();
     if (!inputValue.trim()) return;
@@ -106,28 +104,34 @@ const Project = () => {
       sender: user,
     };
 
-    sendMessage("project-message", newMessage);
     setMessages((prev) => [...prev, newMessage]);
+    sendMessage("project-message", newMessage);
     setInputValue("");
 
-    if (inputValue.startsWith("@ai")) {
-      setTimeout(() => {
-        const aiResponse = {
-          message: "This is an AI-generated response!",
-          sender: "AI",
-        };
-        sendMessage("project-message", aiResponse);
-      }, 1000);
-    }
+    // AI Generated Message;
+
+    // if (inputValue.startsWith("@ai")) {
+    //   setTimeout(() => {
+    //     const aiResponse = {
+    //       message: "This is an AI-generated response!",
+    //       sender: "AI",
+    //     };
+    //     setAiResponses((prev) => [...prev, aiResponse]);
+    //   }, 1000);
+    // }
   };
 
+  // Handle back button click
   const handleBackButton = () => {
-    navigate("/home");
+    navigate("/");
   };
 
   return (
     <main className="h-screen w-screen flex">
+      {/* Left Section: Chat */}
       <section className="relative w-[30%] bg-gray-200 flex flex-col">
+        
+        {/* Header */}
         <header className="p-2 px-4 flex justify-between items-center bg-purple-700">
           <button
             onClick={() => setShowModal(true)}
@@ -144,8 +148,9 @@ const Project = () => {
           </button>
         </header>
 
+        {/* Messages */}
         <div className="flex-1 overflow-y-auto p-4">
-          {loading ? (
+          {isProjectLoading ? (
             <p className="text-center text-gray-500">Loading messages...</p>
           ) : (
             messages.map((msg, idx) => (
@@ -173,6 +178,7 @@ const Project = () => {
           <div ref={messagesEndRef} />
         </div>
 
+        {/* Input Box */}
         <div className="p-4 flex items-center gap-2 bg-gray-100">
           <input
             type="text"
@@ -195,7 +201,7 @@ const Project = () => {
           </button>
         </div>
 
-        {/* Side Panel */}
+        {/* Side Panel: Collaborators */}
         <div
           className={`sidePanel w-full h-full flex flex-col gap-2 bg-gray-200 absolute transition-all ${
             showSidePanel ? "translate-x-0" : "-translate-x-full"
@@ -203,7 +209,6 @@ const Project = () => {
         >
           <header className="flex justify-between items-center px-4 p-2 bg-purple-600">
             <h1 className="font-semibold text-white text-lg">Collaborators</h1>
-
             <button
               onClick={() => setShowSidePanel(!showSidePanel)}
               className="p-2 text-white bg-purple-400 rounded-full"
@@ -212,22 +217,22 @@ const Project = () => {
             </button>
           </header>
           <div className="users flex flex-col gap-2">
-            {projects.user &&
-              projects.user.map((users) => {
-                console.log(users);
-                return (
-                  <div className="user hover:bg-slate-100 p-2 flex gap-2 items-center">
-                    <div className="aspect-square rounded-full w-fit h-fit flex items-center justify-center p-2 text-white bg-purple-400">
-                      <FaRegUser />
-                    </div>
-                    <h1 className="tracking-wide">{users.email}</h1>
-                  </div>
-                );
-              })}
+            {project?.user?.map((user) => (
+              <div
+                key={user._id}
+                className="user hover:bg-slate-100 p-2 flex gap-2 items-center"
+              >
+                <div className="aspect-square rounded-full w-fit h-fit flex items-center justify-center p-2 text-white bg-purple-400">
+                  <FaRegUser />
+                </div>
+                <h1 className="tracking-wide">{user.email}</h1>
+              </div>
+            ))}
           </div>
         </div>
       </section>
 
+      {/* Right Section: AI Responses */}
       <section className="w-full md:w-[70%] bg-white flex flex-col gap-4">
         <div className="flex justify-between bg-zinc-800 p-4 items-center">
           <button
@@ -251,10 +256,10 @@ const Project = () => {
         </div>
       </section>
 
-      {/* Users Modal */}
+      {/* Modal: Add Collaborators */}
       {showModal && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="bg-white p-6 rounded-md shadow-lg w-[90%] space-y-4  max-w-md">
+          <div className="bg-white p-6 rounded-md shadow-lg w-[90%] space-y-4 max-w-md">
             <h2 className="text-xl font-semibold mb-4 text-center">
               Add Collaborator
             </h2>
@@ -272,17 +277,15 @@ const Project = () => {
               ))}
             </div>
             <div className="flex justify-around gap-2">
-              {/* Add User Button */}
               <button
-                onClick={addCollaborators}
-                disabled={selectedUserId.length === 0}
+                onClick={handleAddCollaborators}
+                disabled={selectedUserId.length === 0 || isAddingCollaborators}
                 className="w-full py-2 text-white font-semibold rounded-md bg-purple-600"
               >
-                Add Collaborators
+                {isAddingCollaborators ? "Adding..." : "Add Collaborators"}
               </button>
-              {/* Close */}
               <button
-                onClick={() => setShowModal(!showModal)}
+                onClick={() => setShowModal(false)}
                 className="w-full py-2 text-white font-semibold rounded-md bg-purple-600"
               >
                 Close

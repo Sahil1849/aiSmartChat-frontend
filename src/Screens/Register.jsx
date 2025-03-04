@@ -1,31 +1,27 @@
-import React, { useContext, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import axios from "../config/axios.config";
-import { UserContext } from "../context/user.context";
+// components/Register.js
+import React, { useState } from "react";
+import { Link } from "react-router-dom";
+import { useRegister } from "../hooks/auth/useRegister";
 
 const Register = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState(null);
-  const [loading, setLoading] = useState(false);
 
-  const navigate = useNavigate();
-  const { setUser } = useContext(UserContext);
+  const { mutate: register, isLoading: isRegistering } = useRegister();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
-    setLoading(true);
+
     try {
-      const response = await axios.post("/user/register", { email, password });
-      console.log(response);
-      localStorage.setItem("token", response.data.token);
-      setUser(response.data.user);
-      navigate("/login");
-    } catch (error) {
-      setError(error.response?.data?.message || "Something went wrong");
-    } finally {
-      setLoading(false);
+      const registerData = {
+        email,
+        password,
+      };
+      await register(registerData);
+    } catch (err) {
+      setError(err.response?.data?.message || "Something went wrong");
     }
   };
 
@@ -64,9 +60,9 @@ const Register = () => {
           <button
             type="submit"
             className="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600 transition duration-200"
-            disabled={loading}
+            disabled={isRegistering}
           >
-            {loading ? "Registering..." : "Register"}
+            {isRegistering ? "Registering..." : "Register"}
           </button>
         </form>
         <p className="text-gray-400 mt-4">
