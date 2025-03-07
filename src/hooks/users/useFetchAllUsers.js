@@ -8,6 +8,7 @@ export const useFetchAllUsers = () => {
     queryFn: fetchAllUsers,
     onError: (error) => {
       console.error("Error fetching users:", error);
+      toast.error(error.response.data.message || error.response.data.errors[0].msg);
     },
   });
 };

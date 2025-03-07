@@ -5,9 +5,10 @@ export const useFetchProjectById = (projectId) => {
     return useQuery({
         queryKey: ["project", projectId],
         queryFn: () => fetchProjectById(projectId),
-        enabled: !!projectId, // Only fetch if projectId exists
+        enabled: !!projectId, 
         onError: (error) => {
             console.error("Error fetching project:", error);
+            toast.error(error.response.data.message || error.response.data.errors[0].msg);
         },
     });
 };

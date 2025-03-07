@@ -1,6 +1,7 @@
 import { useMutation } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { logOutUser } from "../../api/authAPI";
+import toast from "react-hot-toast";
 
 
 export const useLogout = () => {
@@ -12,6 +13,7 @@ export const useLogout = () => {
         onSuccess: () => {
             localStorage.removeItem('token');
             localStorage.removeItem('userId');
+            toast.success("User logged out successfully");
             navigate('/login');
 
         },

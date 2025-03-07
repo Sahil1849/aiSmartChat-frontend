@@ -70,12 +70,12 @@ const Home = () => {
           {projects?.map((project) => (
             <div
               key={project._id}
-              onClick={() => navigate("/project", { state: { project } })}
+              onClick={() => navigate(`/project/${project._id}`, { state: { project } })}
               className="p-4 border-2 cursor-pointer rounded-md"
             >
               <h2 className="text-lg font-semibold">{project.name}</h2>
               <div>
-                <small>Users: {project.user.length}</small>
+                <small>Users: {project.members.length}</small>
               </div>
             </div>
           ))}

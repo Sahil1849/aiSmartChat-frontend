@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { registerUser } from "../../api/authAPI";
 import { UserContext } from "../../context/user.context";
 import { useContext } from "react";
+import toast from "react-hot-toast";
 
 export const useRegister = () => {
   const navigate = useNavigate();
@@ -14,10 +15,12 @@ export const useRegister = () => {
     onSuccess: (data) => {
       localStorage.setItem("token", data.token);
       setUser(data.user);
+      toast.success("User registered successfully");
       navigate("/login");
     },
     onError: (error) => {
       console.error("Registration failed:", error);
+      toast.error(error.response.data.message || error.response.data.errors[0].msg);
     },
   });
 };

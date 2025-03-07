@@ -23,7 +23,7 @@ const AppRoutes = () => {
         {/* Protected Routes */}
         <Route path="/" element={<PrivateRoute element={<Home />} />} />
         <Route
-          path="/project"
+          path="/project/:id"
           element={<PrivateRoute element={<Project />} />}
         />
 

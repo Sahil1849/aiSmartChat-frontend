@@ -2,7 +2,6 @@
 import axios from '../config/axios.config';
 
 export const loginUser = async (loginData) => {
-    console.log(loginData);
     const response = await axios.post('/user/login', loginData);
     return response.data;
 };
@@ -14,9 +13,7 @@ export const registerUser = async (registerData) => {
 };
 
 // Log out the user
-export const logOutUser = async ()=>{
-    console.log("In logOutUser");
+export const logOutUser = async () => {
     const response = await axios.post("/user/logout");
-    console.log("response data: ",response.data);
     return response.data;
 }

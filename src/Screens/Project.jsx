@@ -1,20 +1,19 @@
-import React, { useContext, useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { FiUsers } from "react-icons/fi";
-import { FaRegUser } from "react-icons/fa";
 import { IoIosSend } from "react-icons/io";
 import { IoMdPersonAdd } from "react-icons/io";
-import { RiCloseLine } from "react-icons/ri";
-import { useLocation, useNavigate } from "react-router-dom";
-import { UserContext } from "../context/user.context";
-import {
-  initializeSocket,
-  receiveMessage,
-  sendMessage,
-} from "../config/socket.config";
+import { RiCloseLine, RiMore2Fill } from "react-icons/ri";
+import { useNavigate, useParams } from "react-router-dom";
 import MarkDown from "markdown-to-jsx";
 import { useFetchProjectById } from "../hooks/projects/useFetchProjectById";
 import { useFetchAllUsers } from "../hooks/users/useFetchAllUsers";
 import { useAddCollaborators } from "../hooks/users/useAddCollaborators";
+import { useCurrentUser } from "../hooks/users/useCurrentUser";
+import { useRemoveUserFromProject } from "../hooks/projects/useRemoveUserFromProject";
+import { useSocket } from "../hooks/useSocket";
+import { useExitProject } from "../hooks/projects/useExitProject";
+import { useMakeUserAdmin } from "../hooks/users/useMakeUserAdmin";
+import { useDeleteProject } from "../hooks/projects/useDeleteProject";
 
 const Project = () => {
   const [showSidePanel, setShowSidePanel] = useState(false);
@@ -23,51 +22,68 @@ const Project = () => {
   const [selectedUserId, setSelectedUserId] = useState([]);
   const [messages, setMessages] = useState([]);
   const [aiResponses, setAiResponses] = useState([]);
-  const { user } = useContext(UserContext);
+  const [removingUserId, setRemovingUserId] = useState(null);
+  const [openDropdownId, setOpenDropdownId] = useState(null);
+  const [makingAdminUserId, setMakingAdminUserId] = useState(null);
   const messagesEndRef = useRef(null);
-  const projectId = useRef(null);
-  const location = useLocation();
   const navigate = useNavigate();
+  const { id: projectId } = useParams();
+  const userId = localStorage.getItem("userId");
 
-  // Fetch project and users
+  // Fetch project
   const {
     data: project,
     isLoading: isProjectLoading,
     error: projectError,
-  } = useFetchProjectById(location.state?.project?._id);
+  } = useFetchProjectById(projectId);
 
+  // Fetch all users
   const {
     data: users,
     isLoading: isUsersLoading,
     error: usersError,
   } = useFetchAllUsers();
 
+  // Fetch current user
+  const { data: userData } = useCurrentUser(userId);
+
   // Add collaborators mutation
   const { mutate: addCollaborators, isLoading: isAddingCollaborators } =
-    useAddCollaborators(location.state?.project?._id);
+    useAddCollaborators(projectId);
 
-  // Initialize socket and handle messages
-  useEffect(() => {
-    projectId.current = location.state?.project?._id;
-    if (!projectId.current) return;
+  // Make user admin mutation
+  const { mutate: makeAdmin, isPending: makingUserAdmin } = useMakeUserAdmin({
+    projectId,
+  });
 
-    const socket = initializeSocket(projectId.current);
+  // Remove user mutation
+  const {
+    mutate: removeUser,
+    isPending: removingUser,
+    error: errorRemovingUser,
+  } = useRemoveUserFromProject({ projectId });
 
-    const handleIncomingMessage = (data) => {
-      if (data.sender === "AI") {
-        setAiResponses((prev) => [...prev, data]);
-      } else {
-        setMessages((prev) => [...prev, data]);
-      }
-    };
+  const { deleteTheProject, errorDeletingTheProject, isdeletingTheProject } =
+    useDeleteProject();
 
-    socket.on("project-message", handleIncomingMessage);
+  // Exit project mutation
+  const {
+    mutate: exitProject,
+    isPending: exitingProject,
+    error: errorExitingProject,
+  } = useExitProject();
 
-    return () => {
-      socket.off("project-message", handleIncomingMessage);
-      socket.disconnect();
-    };
-  }, [location.state?.project?._id]);
+  // Handle incoming messages
+  const handleIncomingMessage = (data) => {
+    if (data.sender === "AI") {
+      setAiResponses((prev) => [...prev, data]);
+    } else {
+      setMessages((prev) => [...prev, data]);
+    }
+  };
+
+  // Initialize socket
+  const { sendMessage } = useSocket(projectId, handleIncomingMessage);
 
   // Scroll to the bottom of the messages
   useEffect(() => {
@@ -94,6 +110,41 @@ const Project = () => {
     }
   };
 
+  // Dropdown handler
+  const handleDropdownToggle = (userId) => {
+    setOpenDropdownId((prev) => (prev === userId ? null : userId));
+  };
+
+  // Make Admin handler
+  const handleMakeAdmin = (userId) => {
+    setMakingAdminUserId(userId);
+    makeAdmin(
+      { userId },
+      {
+        onSettled: () => setMakingAdminUserId(null),
+      }
+    );
+  };
+
+  // Remove User handler
+  const handleRemoveUser = (userId) => {
+    setRemovingUserId(userId);
+    removeUser(userId, {
+      onSettled: () => setRemovingUserId(null),
+    });
+  };
+
+  // Handle exiting the project
+  const handleExitProject = (e) => {
+    e.preventDefault();
+    exitProject(projectId);
+  };
+
+  // Handle Delete The project
+  const handleDeleteProject = (projectId) => {
+    deleteTheProject(projectId);
+  };
+
   // Send a message
   const send = (e) => {
     e.preventDefault();
@@ -101,24 +152,13 @@ const Project = () => {
 
     const newMessage = {
       message: inputValue,
-      sender: user,
+      sender: userData,
+      projectId,
     };
 
     setMessages((prev) => [...prev, newMessage]);
     sendMessage("project-message", newMessage);
     setInputValue("");
-
-    // AI Generated Message;
-
-    // if (inputValue.startsWith("@ai")) {
-    //   setTimeout(() => {
-    //     const aiResponse = {
-    //       message: "This is an AI-generated response!",
-    //       sender: "AI",
-    //     };
-    //     setAiResponses((prev) => [...prev, aiResponse]);
-    //   }, 1000);
-    // }
   };
 
   // Handle back button click
@@ -130,7 +170,6 @@ const Project = () => {
     <main className="h-screen w-screen flex">
       {/* Left Section: Chat */}
       <section className="relative w-[30%] bg-gray-200 flex flex-col">
-        
         {/* Header */}
         <header className="p-2 px-4 flex justify-between items-center bg-purple-700">
           <button
@@ -157,14 +196,14 @@ const Project = () => {
               <div
                 key={idx}
                 className={`flex ${
-                  msg.sender?._id === user?._id
+                  msg.sender?._id === userData?._id
                     ? "justify-end"
                     : "justify-start"
                 } mb-4`}
               >
                 <div
                   className={`p-3 rounded-md max-w-[75%] ${
-                    msg.sender?._id === user?._id
+                    msg.sender?._id === userData?._id
                       ? "bg-purple-600 text-white"
                       : "bg-gray-300 text-gray-600"
                   }`}
@@ -216,16 +255,66 @@ const Project = () => {
               <RiCloseLine />
             </button>
           </header>
+
           <div className="users flex flex-col gap-2">
-            {project?.user?.map((user) => (
+            {project?.members?.map((member) => (
               <div
-                key={user._id}
+                key={member.user._id}
                 className="user hover:bg-slate-100 p-2 flex gap-2 items-center"
               >
-                <div className="aspect-square rounded-full w-fit h-fit flex items-center justify-center p-2 text-white bg-purple-400">
-                  <FaRegUser />
+                {/* User info */}
+                <div className="flex-1">
+                  {member.user.email}
+                  <span className="text-sm px-2 py-1 bg-green-500 rounded-xl text-white">
+                    {member.role}
+                  </span>
                 </div>
-                <h1 className="tracking-wide">{user.email}</h1>
+
+                {member.role !== "admin" && (
+                  <div className="relative">
+                    <button
+                      onClick={() => handleDropdownToggle(member.user._id)}
+                      className="p-1 hover:bg-gray-200 rounded-lg"
+                    >
+                      <RiMore2Fill />
+                    </button>
+
+                    {openDropdownId === member.user._id && (
+                      <div className="absolute right-0 mt-2 w-32 bg-white border rounded-md shadow-lg z-10">
+                        <button
+                          onClick={() => {
+                            handleMakeAdmin(member.user._id);
+                            setOpenDropdownId(null);
+                          }}
+                          disabled={
+                            makingUserAdmin &&
+                            makingAdminUserId === member.user._id
+                          }
+                          className="block w-full px-4 py-2 text-sm hover:bg-gray-100 disabled:opacity-50"
+                        >
+                          {makingUserAdmin &&
+                          makingAdminUserId === member.user._id
+                            ? "Updating..."
+                            : "Make Admin"}
+                        </button>
+                        <button
+                          onClick={() => {
+                            handleRemoveUser(member.user._id);
+                            setOpenDropdownId(null);
+                          }}
+                          disabled={
+                            removingUser && removingUserId === member.user._id
+                          }
+                          className="block w-full px-4 py-2 text-sm hover:bg-gray-100 disabled:opacity-50"
+                        >
+                          {removingUser && removingUserId === member.user._id
+                            ? "Removing..."
+                            : "Remove User"}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -242,9 +331,20 @@ const Project = () => {
             Back
           </button>
           <h1 className="text-2xl font-bold text-white">AI Responses</h1>
-          <button className="px-4 py-2 bg-red-500 hover:bg-red-700 rounded-lg text-white">
-            Exit Project
-          </button>
+          <div className="flex justify-center items-center gap-2">
+            <button
+              onClick={handleExitProject}
+              className="px-4 py-2 bg-red-500 hover:bg-red-700 rounded-lg text-white"
+            >
+              {exitingProject ? "Exiting..." : "Exit Project"}
+            </button>
+            <button
+              onClick={() => handleDeleteProject(projectId)}
+              className="px-4 py-2 bg-red-500 hover:bg-red-700 rounded-lg text-white"
+            >
+              {exitingProject ? "Deleting..." : "Delete Project"}
+            </button>
+          </div>
         </div>
         <div className="flex-1 overflow-y-auto px-4">
           {aiResponses.map((res, idx) => (
