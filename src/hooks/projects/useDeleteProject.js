@@ -9,7 +9,6 @@ export const useDeleteProject = () => {
     const { mutate, isPending, error } = useMutation({
         mutationFn: (projectId) => deleteProject(projectId),
         onSuccess: (data) => {
-            console.log(data);
             toast.success(data.message);
             queryClient.invalidateQueries({ queryKey: ["projects"] });
             navigate("/")

@@ -14,7 +14,6 @@ export const useFetchProjects = () => {
       toast.error(error.response.data.message || error.response.data.errors[0].msg);
     },
     onSuccess: (data) => {
-      console.log("Projects fetched successfully:", data);
       window.location.reload();
     },
   });
