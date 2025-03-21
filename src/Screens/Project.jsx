@@ -14,6 +14,7 @@ import { Messages } from "../components/projects/Messages";
 import { Collaborators } from "../components/projects/Collaborators";
 import { AIResponses } from "../components/projects/AiResponse";
 import { AddCollaboratorsModal } from "../components/projects/AddCollaboratorsModal";
+import { ArrowLeft, LogOut, Trash2 } from "lucide-react";
 
 const Project = () => {
   const [showSidePanel, setShowSidePanel] = useState(false);
@@ -31,26 +32,21 @@ const Project = () => {
   const { id: projectId } = useParams();
   const userId = localStorage.getItem("userId");
 
-  const { data: project, isLoading: isProjectLoading } =
-    useFetchProjectById(projectId);
+  const { data: project, isLoading: isProjectLoading } = useFetchProjectById(projectId);
   const { data: users } = useFetchAllUsers();
   const { data: userData } = useCurrentUser(userId);
-  const { mutate: addCollaborators, isLoading: isAddingCollaborators } =
-    useAddCollaborators(projectId);
-  const { mutate: makeAdmin, isPending: makingUserAdmin } = useMakeUserAdmin({
-    projectId,
-  });
-  const { mutate: removeUser, isPending: removingUser } =
-    useRemoveUserFromProject({ projectId });
+  const { mutate: addCollaborators, isLoading: isAddingCollaborators } = useAddCollaborators(projectId);
+  const { mutate: makeAdmin, isPending: makingUserAdmin } = useMakeUserAdmin({ projectId });
+  const { mutate: removeUser, isPending: removingUser } = useRemoveUserFromProject({ projectId });
   const { deleteTheProject, isdeletingTheProject } = useDeleteProject();
   const { mutate: exitProject, isPending: exitingProject } = useExitProject();
 
   const { sendMessage } = useSocket(projectId, (data) => {
     if (data.sender === "AI") {
       setAiResponses((prev) => [...prev, data]);
-      setIsGenerating(false); // Stop generating when AI response arrives
+      setIsGenerating(false);
     } else {
-      setMessages((prev) => [...prev, data]); // Add normal messages to the messages list
+      setMessages((prev) => [...prev, data]);
     }
   });
 
@@ -107,87 +103,132 @@ const Project = () => {
       message: inputValue,
       sender: userData,
       projectId,
-      isAI: inputValue.toLowerCase().includes('@ai'), // Add isAI flag
+      isAI: inputValue.toLowerCase().includes('@ai'),
       timestamp: new Date().toLocaleTimeString(),
     };
 
-    // Add the message to the messages list regardless of whether it's AI-tagged
     setMessages((prev) => [...prev, newMessage]);
 
-    // If the message is AI-tagged, show generating state
     if (newMessage.isAI) {
       setIsGenerating(true);
     }
 
-    // Send the message via socket
     sendMessage("project-message", newMessage);
     setInputValue("");
   };
 
-  const handleBackButton = () => {
-    navigate("/");
-  };
-
   return (
-    <main className="h-screen w-full flex flex-col md:flex-row overflow-hidden bg-white">
+    <main className="h-screen w-full flex flex-col md:flex-row overflow-hidden bg-black">
       {/* Left Section */}
-      <section className="w-full md:w-[30%] bg-gray-50 flex flex-col">
-        <ProjectHeader
-          setShowModal={setShowModal}
-          setShowSidePanel={setShowSidePanel}
-        />
-        <Messages
-          messages={messages}
-          userData={userData}
-          inputValue={inputValue}
-          setInputValue={setInputValue}
-          send={send}
-          isProjectLoading={isProjectLoading}
-          messagesEndRef={messagesEndRef}
-        />
-        <Collaborators
-          project={project}
-          showSidePanel={showSidePanel}
-          setShowSidePanel={setShowSidePanel}
-          openDropdownId={openDropdownId}
-          handleDropdownToggle={handleDropdownToggle}
-          handleMakeAdmin={handleMakeAdmin}
-          handleRemoveUser={handleRemoveUser}
-          makingAdminUserId={makingAdminUserId}
-          makingUserAdmin={makingUserAdmin}
-          removingUserId={removingUserId}
-          removingUser={removingUser}
-        />
+      <section className="w-full md:w-[30%] flex flex-col relative">
+        <div className="absolute inset-0 bg-black/95" style={{
+          backgroundImage: 'radial-gradient(circle at center, rgba(30, 64, 175, 0.05) 0%, rgba(0, 0, 0, 0.95) 100%)',
+        }} />
+
+        <div className="relative flex flex-col h-full border-r border-blue-500/20">
+          <ProjectHeader
+            setShowModal={setShowModal}
+            setShowSidePanel={setShowSidePanel}
+          />
+          <Messages
+            messages={messages}
+            userData={userData}
+            inputValue={inputValue}
+            setInputValue={setInputValue}
+            send={send}
+            isProjectLoading={isProjectLoading}
+            messagesEndRef={messagesEndRef}
+          />
+          <Collaborators
+            project={project}
+            showSidePanel={showSidePanel}
+            setShowSidePanel={setShowSidePanel}
+            openDropdownId={openDropdownId}
+            handleDropdownToggle={handleDropdownToggle}
+            handleMakeAdmin={handleMakeAdmin}
+            handleRemoveUser={handleRemoveUser}
+            makingAdminUserId={makingAdminUserId}
+            makingUserAdmin={makingUserAdmin}
+            removingUserId={removingUserId}
+            removingUser={removingUser}
+          />
+        </div>
       </section>
 
       {/* Right Section */}
-      <section className="flex-1 flex flex-col min-w-0">
-        <div className="flex-shrink-0 bg-gradient-to-r from-purple-700 to-purple-600 p-4">
-          <div className="flex justify-between items-center">
-            <button
-              onClick={handleBackButton}
-              className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-white transition-all duration-300 hover:scale-105"
-            >
-              Back
-            </button>
-            <h1 className="text-2xl font-bold text-white">AI Responses</h1>
-            <div className="flex justify-center items-center gap-2">
+      <section className="flex-1 flex flex-col min-w-0 relative">
+        <div className="absolute inset-0 bg-blue-800/95" style={{
+          backgroundImage: 'radial-gradient(circle at center, rgba(30, 64, 175, 0.05) 0%, rgba(0, 0, 0, 0.95) 100%)',
+        }} />
+
+        <div className="relative flex flex-col h-full">
+          <header className="p-4 border-b border-blue-500/20 backdrop-blur-sm">
+            <div className="flex justify-between items-center">
               <button
-                onClick={handleExitProject}
-                className="px-4 py-2 bg-red-500 hover:bg-red-600 rounded-lg text-white transition-all duration-300 hover:scale-105"
+                onClick={() => navigate("/")}
+                className="group relative"
               >
-                {exitingProject ? "Exiting..." : "Exit Project"}
+                <div className="absolute inset-0 bg-blue-800/20 rounded-xl blur-sm transform group-hover:scale-105 transition-transform duration-300" />
+                <div className="relative flex items-center gap-2 px-4 py-2 rounded-xl border border-blue-500/20 backdrop-blur-sm bg-blue-900/50 text-white transition-all duration-300 group-hover:border-blue-500/40">
+                  <ArrowLeft size={18} />
+                  <span>Back</span>
+                </div>
               </button>
-              <button
-                onClick={() => handleDeleteProject(projectId)}
-                className="px-4 py-2 bg-red-500 hover:bg-red-600 rounded-lg text-white transition-all duration-300 hover:scale-105"
-              >
-                {isdeletingTheProject ? "Deleting..." : "Delete Project"}
-              </button>
+
+              <h1 className="text-2xl font-bold text-white">AI Responses</h1>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={handleExitProject}
+                  disabled={exitingProject}
+                  className="group relative"
+                >
+                  <div className="absolute inset-0 bg-blue-800/20 rounded-xl blur-sm transform group-hover:scale-105 transition-transform duration-300" />
+                  <div className="relative flex items-center gap-2 px-4 py-2 rounded-xl border border-blue-500/20 backdrop-blur-sm bg-blue-900/50 text-white transition-all duration-300 group-hover:border-blue-500/40">
+                    <LogOut size={18} />
+                    {exitingProject ? (
+                      <span className="flex items-center gap-2">
+                        Exiting
+                        <div className="flex space-x-1">
+                          <div className="w-1.5 h-1.5 bg-white rounded-full animate-bounce" style={{ animationDelay: '0s' }} />
+                          <div className="w-1.5 h-1.5 bg-white rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
+                          <div className="w-1.5 h-1.5 bg-white rounded-full animate-bounce" style={{ animationDelay: '0.4s' }} />
+                        </div>
+                      </span>
+                    ) : (
+                      "Exit Project"
+                    )}
+                  </div>
+                </button>
+
+                <button
+                  onClick={() => handleDeleteProject(projectId)}
+                  disabled={isdeletingTheProject}
+                  className="group relative"
+                >
+                  <div className="absolute inset-0 bg-red-900/20 rounded-xl blur-sm transform group-hover:scale-105 transition-transform duration-300" />
+                  <div className="relative flex items-center gap-2 px-4 py-2 rounded-xl border border-red-500/20 backdrop-blur-sm bg-red-900/30 text-white transition-all duration-300 group-hover:border-red-500/40">
+                    <Trash2 size={18} />
+                    {isdeletingTheProject ? (
+                      <span className="flex items-center gap-2">
+                        Deleting
+                        <div className="flex space-x-1">
+                          <div className="w-1.5 h-1.5 bg-white rounded-full animate-bounce" style={{ animationDelay: '0s' }} />
+                          <div className="w-1.5 h-1.5 bg-white rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
+                          <div className="w-1.5 h-1.5 bg-white rounded-full animate-bounce" style={{ animationDelay: '0.4s' }} />
+                        </div>
+                      </span>
+                    ) : (
+                      "Delete Project"
+                    )}
+                  </div>
+                </button>
+              </div>
             </div>
-          </div>
+          </header>
+
+          <AIResponses aiResponses={aiResponses} isGenerating={isGenerating} />
         </div>
-        <AIResponses aiResponses={aiResponses} isGenerating={isGenerating} />
       </section>
 
       {/* Add Collaborators Modal */}
@@ -199,7 +240,6 @@ const Project = () => {
         handleAddCollaborators={handleAddCollaborators}
         isAddingCollaborators={isAddingCollaborators}
         users={users}
-
       />
     </main>
   );

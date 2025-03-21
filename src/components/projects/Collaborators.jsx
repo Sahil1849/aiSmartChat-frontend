@@ -15,71 +15,108 @@ export const Collaborators = ({
   removingUser,
 }) => (
   <div
-    className={`absolute inset-y-0 left-0 w-[30%] overflow-hidden bg-white shadow-xl transform transition-transform duration-300 ease-in-out ${
-      showSidePanel ? "translate-x-0" : "-translate-x-full"
-    } z-50`}
+    id="chatBg"
+    className={`absolute inset-y-0 border-r border-r-slate-700 left-0 w-full overflow-hidden bg-black/95 shadow-xl transform transition-transform duration-300 ease-in-out ${showSidePanel ? "translate-x-0" : "-translate-x-full"
+      } z-50`}
+    style={{
+      backgroundImage: 'radial-gradient(circle at center, rgba(30, 64, 175, 0.05) 0%, rgba(0, 0, 0, 0.95) 100%)',
+    }}
   >
-    <header className="p-4 bg-gradient-to-r from-purple-700 to-purple-600 flex justify-between items-center">
-      <h1 className="text-xl font-bold text-white">Collaborators</h1>
+    {/* Subtle gradient overlay */}
+    <div className="absolute inset-0 bg-gradient-to-b from-blue-900/5 to-black/20 pointer-events-none" />
+
+    <header className="relative p-4 bg-black/60 backdrop-blur-sm border-b border-blue-500/20 flex justify-between items-center">
+      <h1 className="text-xl font-bold text-white flex items-center gap-2">
+        <div className="w-8 h-8 rounded-full bg-blue-800 flex items-center justify-center">
+          <span className="text-white font-semibold text-sm">C</span>
+        </div>
+        Collaborators
+      </h1>
       <button
         onClick={() => setShowSidePanel(false)}
-        className="p-1.5 hover:bg-white/10 rounded-full transition-colors duration-200"
+        className="p-1.5 hover:bg-blue-800/30 rounded-full transition-all duration-200"
       >
-        <RiCloseLine className="text-2xl text-white hover:text-purple-200" />
+        <RiCloseLine className="text-2xl text-white hover:text-blue-400" />
       </button>
     </header>
 
-    <div className="p-4 space-y-2 overflow-y-auto h-[calc(100vh-4rem)]">
+    <div className="relative p-4 space-y-3 overflow-y-auto h-[calc(100vh-4rem)]">
       {project?.members?.map((member) => (
-        <div
-          key={member.user._id}
-          className="group p-3 rounded-lg border border-purple-50 hover:border-purple-100 bg-white hover:bg-purple-50 transition-all duration-200"
-        >
-          <div className="flex items-center justify-between">
-            <div className="flex flex-col">
-              <span className="text-sm font-medium text-purple-900">{member.user.email}</span>
-              <span className="text-xs px-2 py-1 bg-purple-100 text-purple-700 rounded-full mt-1 w-fit">
-                {member.role}
-              </span>
-            </div>
-
-            {member.role !== "admin" && (
-              <div className="relative">
-                <button
-                  onClick={() => handleDropdownToggle(member.user._id)}
-                  className="p-1 hover:bg-purple-100 rounded-full transition-colors duration-200"
-                >
-                  <RiMore2Fill className="text-xl text-purple-600" />
-                </button>
-
-                {openDropdownId === member.user._id && (
-                  <div className="absolute right-0 mt-2 w-40 bg-white border border-purple-100 rounded-lg shadow-lg z-10">
-                    <button
-                      onClick={() => {
-                        handleMakeAdmin(member.user._id);
-                        handleDropdownToggle(null);
-                      }}
-                      disabled={makingUserAdmin && makingAdminUserId === member.user._id}
-                      className="w-full px-4 py-2 text-sm text-purple-900 hover:bg-purple-50 transition-colors disabled:opacity-50"
-                    >
-                      {makingUserAdmin && makingAdminUserId === member.user._id ? "Updating..." : "Make Admin"}
-                    </button>
-                    <button
-                      onClick={() => {
-                        handleRemoveUser(member.user._id);
-                        handleDropdownToggle(null);
-                      }}
-                      disabled={removingUser && removingUserId === member.user._id}
-                      className="w-full px-4 py-2 text-sm text-purple-900 hover:bg-purple-50 transition-colors disabled:opacity-50"
-                    >
-                      {removingUser && removingUserId === member.user._id ? "Removing..." : "Remove User"}
-                    </button>
+        member.user !== null && (
+          <div
+            key={member?.user?._id}
+            className="group relative"
+          >
+            <div className="absolute inset-0 bg-blue-800/10 rounded-xl blur-sm transform group-hover:scale-105 transition-transform duration-300" />
+            <div className="relative p-4 rounded-xl border border-blue-500/20 backdrop-blur-sm bg-zinc-900/70 transition-all duration-300 hover:border-blue-500/40">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-blue-800 flex items-center justify-center">
+                    <span className="text-white font-semibold">
+                      {member?.user?.email.charAt(0).toUpperCase()}
+                    </span>
                   </div>
-                )}
+                  <div className="flex flex-col">
+                    <span className="text-sm font-medium text-white">
+                      {member?.user?.email}
+                    </span>
+                    <span className="text-xs px-2 py-1 bg-blue-800/80 text-blue-100 rounded-full mt-1 w-fit border border-blue-500/30">
+                      {member.role}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="relative">
+                  <button
+                    onClick={() => handleDropdownToggle(member?.user?._id)}
+                    className="p-2 hover:bg-blue-800/30 rounded-full transition-all duration-200"
+                  >
+                    <RiMore2Fill className="text-xl text-white" />
+                  </button>
+
+                  {openDropdownId === member?.user?._id && (
+                    <div className="absolute right-0 mt-2 w-48 bg-zinc-900/95 border border-blue-500/20 rounded-xl shadow-lg backdrop-blur-sm z-10 overflow-hidden">
+                      <button
+                        onClick={() => {
+                          handleMakeAdmin(member.user._id);
+                          handleDropdownToggle(null);
+                        }}
+                        disabled={makingUserAdmin && makingAdminUserId === member?.user?._id}
+                        className="w-full px-4 py-3 text-sm text-white hover:bg-blue-800/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-between"
+                      >
+                        <span>Make Admin</span>
+                        {makingUserAdmin && makingAdminUserId === member.user._id && (
+                          <div className="flex space-x-1">
+                            <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0s' }} />
+                            <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
+                            <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }} />
+                          </div>
+                        )}
+                      </button>
+                      <button
+                        onClick={() => {
+                          handleRemoveUser(member?.user?._id);
+                          handleDropdownToggle(null);
+                        }}
+                        disabled={removingUser && removingUserId === member?.user?._id}
+                        className="w-full px-4 py-3 text-sm text-red-400 hover:bg-red-500/10 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-between"
+                      >
+                        <span>Remove User</span>
+                        {removingUser && removingUserId === member?.user?._id && (
+                          <div className="flex space-x-1">
+                            <div className="w-1.5 h-1.5 bg-red-500 rounded-full animate-bounce" style={{ animationDelay: '0s' }} />
+                            <div className="w-1.5 h-1.5 bg-red-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
+                            <div className="w-1.5 h-1.5 bg-red-500 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }} />
+                          </div>
+                        )}
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
-            )}
+            </div>
           </div>
-        </div>
+        )
       ))}
     </div>
   </div>

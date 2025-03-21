@@ -28,3 +28,8 @@ export const makeUserAdmin = async ({ projectId, userId }) => {
   });
   return response.data;
 };
+
+export const deleteUserAccount = async (userId)=>{
+  const response = await axios.delete(`/user/delete/${userId}`);
+  return response.data;
+};

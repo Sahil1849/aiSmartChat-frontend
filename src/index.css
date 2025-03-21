@@ -1,3 +1,26 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+::-webkit-scrollbar {
+  width: 2px; /* Adjust scrollbar width */
+}
+
+::-webkit-scrollbar-track {
+  background: #a5a5a5; /* Light gray track */
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #1d4ed8; /* Blue-700 */
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #1e40af; /* Darker Blue on hover */
+}
+
+/* Scrollbar for Firefox */
+* {
+  scrollbar-color: #1d4ed8 #c0bfbf; /* thumb color | track color */
+}
