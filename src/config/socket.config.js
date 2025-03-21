@@ -1,27 +1,30 @@
-import socket from "socket.io-client";
+import { io } from "socket.io-client";
 
 let socketInstance = null;
 
-// Initialize socket connection
 export const initializeSocket = (projectId) => {
-    socketInstance = socket(import.meta.env.VITE_API_URL, {
+    socketInstance = io(import.meta.env.VITE_API_URL, {
         auth: {
             token: localStorage.getItem("token"),
         },
         query: {
             projectId,
         },
+        // Force use of websocket transport
+        transports: ["websocket"],
     });
 
     return socketInstance;
 };
 
-// Receive message from server
 export const receiveMessage = (eventName, callback) => {
-    socketInstance.on(eventName, callback);
+    if (socketInstance) {
+        socketInstance.on(eventName, callback);
+    }
 };
 
-// Send message to server
 export const sendMessage = (eventName, data) => {
-    socketInstance.emit(eventName, data);
+    if (socketInstance) {
+        socketInstance.emit(eventName, data);
+    }
 };
