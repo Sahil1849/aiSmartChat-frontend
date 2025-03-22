@@ -5,7 +5,6 @@ export const useSocket = (projectId, onMessageReceived) => {
   const socketRef = useRef(null);
   const messageHandlerRef = useRef(onMessageReceived);
 
-  // Keep the handler reference updated
   useEffect(() => {
     messageHandlerRef.current = onMessageReceived;
   }, [onMessageReceived]);
@@ -41,7 +40,7 @@ export const useSocket = (projectId, onMessageReceived) => {
         }
       }
     };
-  }, [projectId]); // Only projectId in dependencies
+  }, [projectId]); 
 
   const sendMessage = useCallback((eventName, data) => {
     if (socketRef.current?.connected) {

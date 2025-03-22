@@ -1,4 +1,3 @@
-// hooks/users/useFetchAllUsers.js
 import { useQuery } from "@tanstack/react-query";
 import { fetchAllUsers } from "../../api/usersAPI";
 

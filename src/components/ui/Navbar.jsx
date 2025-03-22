@@ -5,7 +5,7 @@ import { useDeleteUserAccount } from "../../hooks/users/useDeleteUserAccount";
 import { useCurrentUser } from "../../hooks/users/useCurrentUser";
 
 const Navbar = () => {
-  const { mutate: logoutUser, isLoading: isLoggingOut } = useLogout();
+  const { isLoggingOut, logoutUser } = useLogout();
   const { deleteAccount, isdeletingAccount } = useDeleteUserAccount();
   const userId = localStorage.getItem("userId");
   const { data: userData } = useCurrentUser(userId);
@@ -56,21 +56,8 @@ const Navbar = () => {
                 <LogOut size={18} />
                 {isLoggingOut ? (
                   <span className="flex items-center gap-2">
-                    Logging out
-                    <div className="flex space-x-1">
-                      <div
-                        className="w-1.5 h-1.5 bg-white rounded-full animate-bounce"
-                        style={{ animationDelay: "0s" }}
-                      />
-                      <div
-                        className="w-1.5 h-1.5 bg-white rounded-full animate-bounce"
-                        style={{ animationDelay: "0.2s" }}
-                      />
-                      <div
-                        className="w-1.5 h-1.5 bg-white rounded-full animate-bounce"
-                        style={{ animationDelay: "0.4s" }}
-                      />
-                    </div>
+                    Logout
+                    <Loader2 className="animate-spin h-5 w-5" />
                   </span>
                 ) : (
                   "Logout"

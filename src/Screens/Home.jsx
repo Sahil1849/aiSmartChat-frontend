@@ -11,19 +11,21 @@ const Home = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const navigate = useNavigate();
 
-  const { data: projects, isLoading: isFetching, error: fetchError } =
-    useFetchProjects();
   const {
-    mutate: createProject,
-    isLoading: isCreating,
-    error: createError,
-  } = useCreateProject();
+    data: projects,
+    isLoading: isFetching,
+    error: fetchError,
+  } = useFetchProjects();
+  const { createProject, errorCreating, isCreating } = useCreateProject();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await createProject(projectName);
-      setIsModalOpen(false);
+      await createProject(projectName, {
+        onSettled: () => {
+          setIsModalOpen(false);
+        },
+      });
       setProjectName("");
     } catch (err) {
       console.error("Error creating project:", err);
@@ -112,7 +114,10 @@ const Home = () => {
                   My Projects
                 </h1>
                 <div className="relative">
-                  <Search className="absolute left-3 top-3 text-blue-400" size={20} />
+                  <Search
+                    className="absolute left-3 top-3 text-blue-400"
+                    size={20}
+                  />
                   <input
                     type="text"
                     placeholder="Search projects..."
@@ -131,7 +136,9 @@ const Home = () => {
                   <div
                     key={project._id}
                     onClick={() =>
-                      navigate(`/project/${project._id}`, { state: { project } })
+                      navigate(`/project/${project._id}`, {
+                        state: { project },
+                      })
                     }
                     className="group relative cursor-pointer"
                   >
@@ -202,12 +209,8 @@ const Home = () => {
                       <div className="relative py-2.5 px-4 rounded-xl border border-blue-500/20 backdrop-blur-sm bg-blue-900/50 text-white font-medium transition-all duration-300 hover:border-blue-500/40 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
                         {isCreating ? (
                           <>
+                            <Loader2 className="animate-spin w-5 h-5" />
                             <span>Creating</span>
-                            <div className="flex space-x-1">
-                              <div className="w-1.5 h-1.5 bg-white rounded-full animate-bounce" style={{ animationDelay: '0s' }} />
-                              <div className="w-1.5 h-1.5 bg-white rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
-                              <div className="w-1.5 h-1.5 bg-white rounded-full animate-bounce" style={{ animationDelay: '0.4s' }} />
-                            </div>
                           </>
                         ) : (
                           "Create Project"

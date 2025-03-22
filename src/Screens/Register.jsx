@@ -8,7 +8,7 @@ const Register = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState(null);
-  const { mutate: register, isLoading: isRegistering } = useRegister();
+  const { register, isRegistering, errorRegister } = useRegister();
 
   const handleSubmit = async (e) => {
     e.preventDefault();

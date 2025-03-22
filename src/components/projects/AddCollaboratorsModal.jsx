@@ -1,6 +1,7 @@
-import React from "react";
+import React, { useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import { IoClose } from "react-icons/io5";
+import { Search } from "lucide-react";
 
 export const AddCollaboratorsModal = ({
   showModal,
@@ -10,8 +11,26 @@ export const AddCollaboratorsModal = ({
   handleAddCollaborators,
   isAddingCollaborators,
   users,
-}) =>
-  showModal && (
+}) => {
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const filteredUsers = useMemo(() => {
+    return users?.filter((user) =>
+      user.email.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [users, searchQuery]);
+
+  const handleAddCollaboratorsAndReset = () => {
+    handleAddCollaborators();
+    setSearchQuery("");
+  };
+
+  const handleCancel = () => {
+    setShowModal(false);
+    setSearchQuery("");
+  };
+
+  return showModal ? (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm">
       <motion.div
         initial={{ scale: 0.95, opacity: 0 }}
@@ -35,44 +54,71 @@ export const AddCollaboratorsModal = ({
                 </h2>
               </div>
               <button
-                onClick={() => setShowModal(false)}
+                onClick={handleCancel}
                 className="p-2 hover:bg-blue-800/30 rounded-full transition-all duration-200"
               >
                 <IoClose className="text-xl text-white hover:text-blue-400" />
               </button>
             </div>
 
+            {/* Search bar */}
+            <div className="relative group">
+              <div className="absolute inset-0 bg-blue-800/10 rounded-xl blur-sm transform group-focus-within:bg-blue-800/20 transition-all duration-300" />
+              <div className="relative flex items-center">
+                <Search className="absolute left-3 w-5 h-5 text-blue-400" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search by email..."
+                  className="w-full py-2.5 pl-10 pr-4 bg-zinc-900/70 border border-blue-500/20 rounded-xl text-white placeholder-blue-400/50 focus:outline-none focus:border-blue-500/40 transition-all duration-300"
+                />
+              </div>
+            </div>
+
             {/* Users list */}
             <div className="space-y-2 max-h-64 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-blue-800 scrollbar-track-transparent">
-              {users?.map((user) => (
-                <button
-                  key={user.email}
-                  onClick={() => handleUserSelection(user._id)}
-                  className="group relative w-full"
-                >
-                  <div className={`absolute inset-0 rounded-xl blur-sm transition-all duration-300 ${selectedUserId.includes(user._id)
-                      ? "bg-blue-800/30"
-                      : "bg-blue-800/10 group-hover:bg-blue-800/20"
-                    }`} />
-                  <div className={`relative w-full p-3 rounded-xl border transition-all duration-300 flex items-center gap-3 ${selectedUserId.includes(user._id)
-                      ? "border-blue-500/40 bg-blue-900/30 text-white"
-                      : "border-blue-500/20 bg-zinc-900/70 text-gray-300 hover:text-white"
-                    }`}>
-                    <div className="w-8 h-8 rounded-full bg-blue-800 flex items-center justify-center">
-                      <span className="text-white font-semibold">
-                        {user.email.charAt(0).toUpperCase()}
-                      </span>
+              {filteredUsers?.length === 0 ? (
+                <div className="text-center py-4 text-gray-400">
+                  No users found matching your search
+                </div>
+              ) : (
+                filteredUsers?.map((user) => (
+                  <button
+                    key={user.email}
+                    onClick={() => handleUserSelection(user._id)}
+                    className="group relative w-full"
+                  >
+                    <div
+                      className={`absolute inset-0 rounded-xl blur-sm transition-all duration-300 ${
+                        selectedUserId.includes(user._id)
+                          ? "bg-blue-800/30"
+                          : "bg-blue-800/10 group-hover:bg-blue-800/20"
+                      }`}
+                    />
+                    <div
+                      className={`relative w-full p-3 rounded-xl border transition-all duration-300 flex items-center gap-3 ${
+                        selectedUserId.includes(user._id)
+                          ? "border-blue-500/40 bg-blue-900/30 text-white"
+                          : "border-blue-500/20 bg-zinc-900/70 text-gray-300 hover:text-white"
+                      }`}
+                    >
+                      <div className="w-8 h-8 rounded-full bg-blue-800 flex items-center justify-center">
+                        <span className="text-white font-semibold">
+                          {user.email.charAt(0).toUpperCase()}
+                        </span>
+                      </div>
+                      <span className="font-medium">{user.email}</span>
                     </div>
-                    <span className="font-medium">{user.email}</span>
-                  </div>
-                </button>
-              ))}
+                  </button>
+                ))
+              )}
             </div>
 
             {/* Action buttons */}
             <div className="flex gap-3 pt-4 border-t border-blue-500/20">
               <button
-                onClick={handleAddCollaborators}
+                onClick={handleAddCollaboratorsAndReset}
                 disabled={selectedUserId.length === 0 || isAddingCollaborators}
                 className="relative group flex-1"
               >
@@ -82,9 +128,18 @@ export const AddCollaboratorsModal = ({
                     <>
                       <span>Adding</span>
                       <div className="flex space-x-1">
-                        <div className="w-1.5 h-1.5 bg-white rounded-full animate-bounce" style={{ animationDelay: '0s' }} />
-                        <div className="w-1.5 h-1.5 bg-white rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
-                        <div className="w-1.5 h-1.5 bg-white rounded-full animate-bounce" style={{ animationDelay: '0.4s' }} />
+                        <div
+                          className="w-1.5 h-1.5 bg-white rounded-full animate-bounce"
+                          style={{ animationDelay: "0s" }}
+                        />
+                        <div
+                          className="w-1.5 h-1.5 bg-white rounded-full animate-bounce"
+                          style={{ animationDelay: "0.2s" }}
+                        />
+                        <div
+                          className="w-1.5 h-1.5 bg-white rounded-full animate-bounce"
+                          style={{ animationDelay: "0.4s" }}
+                        />
                       </div>
                     </>
                   ) : (
@@ -93,7 +148,7 @@ export const AddCollaboratorsModal = ({
                 </div>
               </button>
               <button
-                onClick={() => setShowModal(false)}
+                onClick={handleCancel}
                 className="relative group flex-1"
               >
                 <div className="absolute inset-0 bg-zinc-800/20 rounded-xl blur-sm transform group-hover:scale-105 transition-transform duration-300" />
@@ -106,4 +161,7 @@ export const AddCollaboratorsModal = ({
         </div>
       </motion.div>
     </div>
-  );
+  ) : null;
+};
+
+export default AddCollaboratorsModal;

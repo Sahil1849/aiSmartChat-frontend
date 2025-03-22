@@ -21,5 +21,5 @@ export const useLogout = () => {
             console.error('Logout failed:', error);
         },
     });
-    return { mutate, isPending, error };
+    return { logoutUser:mutate, isLoggingOut:isPending };
 };

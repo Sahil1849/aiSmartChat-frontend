@@ -4,31 +4,31 @@ import { useNavigate } from "react-router-dom";
 const upcomingFeatures = [
     {
         title: "Google Authentication",
-        description: "Speak to AI and get instant responses via voice.",
+        description: "Allow users to sign in or sign up using their Google accounts for a seamless login experience.",
     },
     {
         title: "Chats will be Stored in Database",
-        description: "Adjust AI responses to be formal, casual, or humorous.",
+        description: "Save chat history in a database to allow users to access their conversations across devices.",
     },
     {
         title: "Messages Notifications",
-        description: "Chat with AI in multiple languages fluently.",
+        description: "Notify users in real-time when they receive new messages or updates in their chats.",
     },
     {
         title: "Email Verification with OTP",
-        description: "AI can now take voice calls and assist users in real-time.",
+        description: "Enhance security by verifying user emails through one-time passwords (OTP) sent to their inbox.",
     },
     {
         title: "Users Profile with Avatar's",
-        description: "AI can now take voice calls and assist users in real-time.",
+        description: "Enable users to customize their profiles with avatars and personal information.",
     },
     {
         title: "Project Settings",
-        description: "AI can now take voice calls and assist users in real-time.",
+        description: "Allow users to configure and manage settings for their projects, including permissions and preferences.",
     },
     {
         title: "Forgot Password and Reset Password",
-        description: "AI can now take voice calls and assist users in real-time.",
+        description: "Provide a secure way for users to reset their passwords if they forget them.",
     },
 ];
 
