@@ -100,7 +100,7 @@ Contributions are **welcome**! Follow these steps to contribute:
 
 ## 📝 **License**  
 
-🚨 **This project is licensed under the MIT License.**.  
+🚨 **This project is licensed under the [MIT License](https://github.com/Sahil1849/aiSmartChat-frontend/blob/main/LICENSE).**.  
 
 ---
 
